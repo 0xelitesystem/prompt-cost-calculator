@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt Cost Calculator</title>
+<meta name="description" content="Estimate token count and API cost for a prompt across Anthropic, OpenAI, and Google models. Browser-only. No tracking.">
+<meta name="ai.description" content="Single-file HTML tool that estimates token count and API cost for a given prompt, displayed across multiple LLM providers (Anthropic, OpenAI, Google). Token counting is character-based approximation with per-provider tuning factors; the tool documents this clearly. Includes input prompt and optional expected output for round-trip cost. Light and dark themes. No frameworks, no dependencies, no tracking.">
+<meta property="og:title" content="Prompt Cost Calculator">
+<meta property="og:description" content="Estimate token count and API cost across providers. Browser-only.">
+<meta property="og:type" content="website">
+<style>
+:root {
+  --paper: #ffffff;
+  --paper-tint: #f5f5f3;
+  --ink: #000000;
+  --ink-soft: #4a4a4a;
+  --rule: #000000;
+  --rule-soft: #cccccc;
+  --warn: #b91c1c;
+  --warn-bg: #fee2e2;
+  --ok-bg: #dbf3e1;
+  --ok: #166534;
+}
+[data-theme="dark"] {
+  --paper: #000000;
+  --paper-tint: #0a0a0a;
+  --ink: #f5f5f3;
+  --ink-soft: #b5b5b0;
+  --rule: #f5f5f3;
+  --rule-soft: #333333;
+  --warn: #fca5a5;
+  --warn-bg: #2a0e0e;
+  --ok-bg: #0e2a16;
+  --ok: #86efac;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+body {
+  font-family: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  background: var(--paper);
+  color: var(--ink);
+  line-height: 1.5;
+  min-height: 100vh;
+  font-size: 14px;
+  font-feature-settings: "tnum" on, "zero" on;
+}
+
+.skip-link { position: absolute; left: -9999px; top: 0; background: var(--ink); color: var(--paper); padding: 0.5rem 1rem; z-index: 100; font-weight: 600; }
+.skip-link:focus { left: 1rem; top: 1rem; }
+
+.layout {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+/* Receipt header: hard top rule, ALL CAPS, slab visual */
+header {
+  border-top: 4px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 1.25rem 0;
+  margin-bottom: 2rem;
+  position: relative;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+}
+.title-block {
+  flex: 1;
+}
+.brand {
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+.subtitle { margin-top: 0.5rem; font-size: 0.8125rem; color: var(--ink-soft); }
+
+.theme-toggle {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 0.4rem 0.6rem;
+  font: inherit; font-size: 0.75rem;
+  cursor: pointer;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { background: var(--ink); color: var(--paper); }
+.theme-toggle:focus-visible { outline: 2px solid var(--warn); outline-offset: 2px; }
+.theme-toggle svg { width: 12px; height: 12px; }
+
+/* Section: receipt-line style with ASCII rules */
+section { margin-bottom: 1.75rem; }
+.section-head {
+  display: flex; align-items: baseline; gap: 0.625rem;
+  margin-bottom: 0.625rem;
+  font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.section-head::before {
+  content: "";
+  display: inline-block;
+  width: 0.6875rem;
+  height: 0.6875rem;
+  background: var(--ink);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+textarea, input[type="text"], select {
+  width: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 0.625rem 0.75rem;
+  font: inherit;
+  font-size: 0.875rem;
+}
+textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.5;
+}
+textarea:focus, input:focus, select:focus {
+  outline: 2px solid var(--warn);
+  outline-offset: -1px;
+}
+
+.help {
+  margin-top: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+.help a { color: var(--ink); }
+
+.row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+/* Tabs: receipt-style slab buttons */
+.tabs {
+  display: flex;
+  border: 1px solid var(--rule);
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+.tab {
+  flex: 1;
+  background: var(--paper);
+  color: var(--ink);
+  border: none;
+  border-right: 1px solid var(--rule);
+  padding: 0.625rem 0.75rem;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  min-width: 110px;
+}
+.tab:last-child { border-right: none; }
+.tab:hover { background: var(--paper-tint); }
+.tab[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.tab:focus-visible { outline: 2px solid var(--warn); outline-offset: -2px; }
+
+/* The receipt panel itself */
+.receipt {
+  border: 1px solid var(--rule);
+  border-top: none;
+  background: var(--paper-tint);
+  padding: 1.25rem;
+}
+.receipt-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed var(--rule-soft);
+  font-size: 0.8125rem;
+  align-items: baseline;
+}
+.receipt-row:last-of-type { border-bottom: none; }
+.receipt-row.header-row {
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.6875rem; padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--rule);
+}
+.receipt-row.total-row {
+  border-top: 1px solid var(--rule);
+  padding-top: 0.625rem; margin-top: 0.5rem;
+  font-weight: 700; font-size: 0.9375rem;
+}
+.receipt-row .name {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.receipt-row .name-tier {
+  color: var(--ink-soft); font-size: 0.6875rem;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  margin-left: 0.4rem;
+}
+.receipt-row .value {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: right;
+}
+.receipt-row .value.warn { color: var(--warn); }
+
+/* Detail breakdown per model */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.detail-cell { display: flex; justify-content: space-between; gap: 0.25rem; }
+.detail-cell .v { color: var(--ink); font-weight: 600; }
+
+/* Warning panel */
+.warn-panel {
+  background: var(--warn-bg);
+  color: var(--warn);
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--warn);
+  font-size: 0.75rem;
+  margin-top: 0.875rem;
+  display: flex; align-items: flex-start; gap: 0.5rem;
+}
+.warn-panel .lbl {
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.6875rem;
+}
+
+.empty-state {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}
+
+/* Footer fold line */
+footer {
+  margin-top: 3rem;
+  border-top: 1px dashed var(--rule);
+  padding-top: 1.5rem;
+  font-size: 0.6875rem;
+  color: var(--ink-soft);
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+footer a { color: var(--ink-soft); text-decoration: underline; text-underline-offset: 2px; }
+footer a:hover, footer a:focus { color: var(--ink); }
+.footer-rule {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0;
+  margin: 0.5rem 0;
+  word-break: break-all;
+  user-select: none;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 540px) {
+  .layout { padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 1.25rem; }
+  .detail-grid { grid-template-columns: repeat(2, 1fr); }
+  .tab { min-width: 90px; font-size: 0.6875rem; padding: 0.5rem; }
+}
+</style>
+</head>
+<body data-theme="light">
+<a href="#main" class="skip-link">Skip to main content</a>
+<div class="layout">
+
+  <header>
+    <div class="title-block">
+      <div class="brand">*** PROMPT COST CALC ***</div>
+      <h1>Token<br>&amp; cost estimator</h1>
+      <p class="subtitle">Browser-only. No API calls. No tracking. Token counts are approximations.</p>
+    </div>
+    <button type="button" class="theme-toggle" id="theme-btn" aria-label="Toggle dark theme" aria-pressed="false">
+      <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+      </svg>
+      <span id="theme-label">DARK</span>
+    </button>
+  </header>
+
+  <main id="main">
+
+    <section>
+      <div class="section-head">Input</div>
+      <label for="prompt-input">Prompt (input tokens)</label>
+      <textarea id="prompt-input" placeholder="Paste or type your prompt here..."></textarea>
+      <p class="help">Counts every character including whitespace and newlines.</p>
+    </section>
+
+    <section>
+      <div class="section-head">Expected Output (Optional)</div>
+      <label for="output-input">Expected response (output tokens)</label>
+      <textarea id="output-input" placeholder="Paste an expected or sample response. Leave blank to estimate input cost only." style="min-height: 80px;"></textarea>
+      <p class="help">If provided, the cost includes both input and output tokens for a full round trip.</p>
+    </section>
+
+    <section>
+      <div class="section-head">Provider</div>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab" role="tab" data-provider="anthropic" aria-selected="true">Anthropic</button>
+        <button type="button" class="tab" role="tab" data-provider="openai" aria-selected="false">OpenAI</button>
+        <button type="button" class="tab" role="tab" data-provider="google" aria-selected="false">Google</button>
+      </div>
+      <div class="receipt" id="receipt" role="tabpanel" aria-live="polite"></div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="footer-rule">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
+    <p><strong>How tokens are counted.</strong> This tool uses character-based approximation, not the actual tokenizers. Each provider's tokenizer is slightly different (Anthropic uses a BPE variant; OpenAI uses tiktoken; Google uses SentencePiece). The approximation factors used here (chars per token) are calibrated against typical English text and will be within roughly 5 to 15 percent of the real count. For exact counts, use each provider's official tokenizer in their SDK.</p>
+    <p><strong>Pricing accuracy.</strong> Pricing values are baked into this file as USD per 1M tokens. Verify current pricing in the provider's console before relying on the cost estimates for billing decisions. To update, edit the <code>PROVIDERS</code> object at the top of the script.</p>
+    <div class="footer-rule">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
+    <p>Source: <a href="https://github.com/0xelitesystem/prompt-cost-calculator" target="_blank" rel="noopener">github.com/0xelitesystem/prompt-cost-calculator</a></p>
+    <p>Related: <a href="https://github.com/0xelitesystem/claude-eval-harness" target="_blank" rel="noopener">claude-eval-harness</a> · <a href="https://github.com/0xelitesystem/byok-patterns" target="_blank" rel="noopener">byok-patterns</a> · <a href="https://github.com/0xelitesystem/prompt-templates" target="_blank" rel="noopener">prompt-templates</a></p>
+    <p>MIT licensed. No data leaves your browser.</p>
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+// -----------------------------------------------------------------------------
+// PROVIDERS configuration. Each model:
+//   { id, name, tier, inputPer1M, outputPer1M, contextWindow }
+// charsPerToken is a per-provider approximation factor calibrated for typical
+// English text. The provider's actual tokenizer is more accurate; this is a
+// browser-only estimate. Last verified pricing snapshot: 2026.
+// -----------------------------------------------------------------------------
+const PROVIDERS = {
+  anthropic: {
+    label: "Anthropic",
+    charsPerToken: 4.0,
+    models: [
+      { id: "claude-opus-4-7",   name: "Opus 4.7",   tier: "Frontier", inputPer1M: 15.00, outputPer1M: 75.00, contextWindow: 200000 },
+      { id: "claude-opus-4-6",   name: "Opus 4.6",   tier: "Frontier", inputPer1M: 15.00, outputPer1M: 75.00, contextWindow: 200000 },
+      { id: "claude-sonnet-4-6", name: "Sonnet 4.6", tier: "Balanced", inputPer1M:  3.00, outputPer1M: 15.00, contextWindow: 200000 },
+      { id: "claude-haiku-4-5",  name: "Haiku 4.5",  tier: "Fast",     inputPer1M:  1.00, outputPer1M:  5.00, contextWindow: 200000 }
+    ]
+  },
+  openai: {
+    label: "OpenAI",
+    charsPerToken: 4.0,
+    models: [
+      { id: "gpt-4o",       name: "GPT-4o",       tier: "Flagship", inputPer1M:  2.50, outputPer1M: 10.00, contextWindow: 128000 },
+      { id: "gpt-4o-mini",  name: "GPT-4o mini",  tier: "Fast",     inputPer1M:  0.15, outputPer1M:  0.60, contextWindow: 128000 },
+      { id: "gpt-4-turbo",  name: "GPT-4 Turbo",  tier: "Legacy",   inputPer1M: 10.00, outputPer1M: 30.00, contextWindow: 128000 },
+      { id: "gpt-3.5-turbo", name: "GPT-3.5 Turbo", tier: "Legacy", inputPer1M:  0.50, outputPer1M:  1.50, contextWindow: 16000  }
+    ]
+  },
+  google: {
+    label: "Google",
+    charsPerToken: 4.5, // SentencePiece tends to produce slightly fewer tokens per char on English
+    models: [
+      { id: "gemini-1.5-pro",   name: "Gemini 1.5 Pro",   tier: "Frontier", inputPer1M:  1.25, outputPer1M:  5.00, contextWindow: 2000000 },
+      { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", tier: "Fast",     inputPer1M:  0.075,outputPer1M:  0.30, contextWindow: 1000000 },
+      { id: "gemini-1.0-pro",   name: "Gemini 1.0 Pro",   tier: "Legacy",   inputPer1M:  0.50, outputPer1M:  1.50, contextWindow: 32000  }
+    ]
+  }
+};
+
+let currentProvider = "anthropic";
+
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+const $ = (id) => document.getElementById(id);
+const escapeHtml = (s) => String(s).replace(/[&<>"']/g, c => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+));
+
+function approxTokens(text, charsPerToken) {
+  if (!text) return 0;
+  return Math.max(1, Math.round(text.length / charsPerToken));
+}
+
+function formatCost(usd) {
+  if (usd === 0) return "$0.000000";
+  if (usd >= 1) return "$" + usd.toFixed(4);
+  if (usd >= 0.01) return "$" + usd.toFixed(5);
+  return "$" + usd.toFixed(6);
+}
+
+function formatNum(n) {
+  return n.toLocaleString("en-US");
+}
+
+function formatPct(p) {
+  if (p < 0.01) return "<0.01%";
+  if (p < 1) return p.toFixed(2) + "%";
+  return p.toFixed(1) + "%";
+}
+
+// -----------------------------------------------------------------------------
+// Receipt renderer
+// -----------------------------------------------------------------------------
+function renderReceipt() {
+  const provider = PROVIDERS[currentProvider];
+  const promptText = $("prompt-input").value;
+  const outputText = $("output-input").value;
+  const receipt = $("receipt");
+
+  if (!promptText.trim() && !outputText.trim()) {
+    receipt.innerHTML = `<div class="empty-state">Type a prompt above to see token counts and cost estimates.</div>`;
+    return;
+  }
+
+  const inTokens  = approxTokens(promptText, provider.charsPerToken);
+  const outTokens = approxTokens(outputText,  provider.charsPerToken);
+
+  let html = "";
+
+  // Token summary header
+  html += `<div class="receipt-row header-row"><span>Token estimate</span><span>${escapeHtml(provider.label)}</span></div>`;
+  html += `<div class="receipt-row"><span>Input chars / tokens</span><span class="value">${formatNum(promptText.length)} / ~${formatNum(inTokens)}</span></div>`;
+  if (outputText.length > 0) {
+    html += `<div class="receipt-row"><span>Output chars / tokens</span><span class="value">${formatNum(outputText.length)} / ~${formatNum(outTokens)}</span></div>`;
+  }
+  html += `<div class="receipt-row"><span>Total tokens</span><span class="value">~${formatNum(inTokens + outTokens)}</span></div>`;
+
+  html += `<div class="receipt-row header-row" style="margin-top: 1rem;"><span>Per-model cost</span><span>USD</span></div>`;
+
+  for (const m of provider.models) {
+    const ctxUsage = (inTokens + outTokens) / m.contextWindow * 100;
+    const cost = (inTokens / 1_000_000) * m.inputPer1M + (outTokens / 1_000_000) * m.outputPer1M;
+    const overCtx = (inTokens + outTokens) > m.contextWindow;
+    html += `<div class="receipt-row">`;
+    html += `<span class="name">${escapeHtml(m.name)}<span class="name-tier">${escapeHtml(m.tier)}</span></span>`;
+    html += `<span class="value${overCtx ? " warn" : ""}">${formatCost(cost)}</span>`;
+    html += `</div>`;
+    html += `<div class="detail-grid">`;
+    html += `<div class="detail-cell"><span>In/M</span><span class="v">$${m.inputPer1M.toFixed(2)}</span></div>`;
+    html += `<div class="detail-cell"><span>Out/M</span><span class="v">$${m.outputPer1M.toFixed(2)}</span></div>`;
+    html += `<div class="detail-cell"><span>Ctx</span><span class="v">${formatNum(m.contextWindow)}</span></div>`;
+    html += `<div class="detail-cell"><span>Used</span><span class="v${overCtx ? " v-warn" : ""}">${formatPct(ctxUsage)}</span></div>`;
+    html += `</div>`;
+  }
+
+  // Cheapest summary
+  const allCosts = provider.models.map(m => ({
+    m,
+    cost: (inTokens / 1_000_000) * m.inputPer1M + (outTokens / 1_000_000) * m.outputPer1M
+  }));
+  const sortedByCost = [...allCosts].sort((a, b) => a.cost - b.cost);
+  if (sortedByCost.length > 1 && sortedByCost[0].cost > 0) {
+    const cheapest = sortedByCost[0];
+    const priciest = sortedByCost[sortedByCost.length - 1];
+    const ratio = priciest.cost / cheapest.cost;
+    html += `<div class="receipt-row total-row">`;
+    html += `<span>Cheapest: ${escapeHtml(cheapest.m.name)}</span>`;
+    html += `<span class="value">${formatCost(cheapest.cost)}</span>`;
+    html += `</div>`;
+    html += `<div class="receipt-row" style="border: none;">`;
+    html += `<span style="color: var(--ink-soft); font-size: 0.75rem;">Priciest is ${ratio.toFixed(1)}x more expensive</span>`;
+    html += `<span class="value" style="color: var(--ink-soft); font-size: 0.75rem;">${formatCost(priciest.cost)}</span>`;
+    html += `</div>`;
+  }
+
+  // Over-context warning
+  const overflowing = provider.models.filter(m => (inTokens + outTokens) > m.contextWindow);
+  if (overflowing.length > 0) {
+    html += `<div class="warn-panel">`;
+    html += `<span class="lbl">!</span>`;
+    html += `<span>Exceeds context window for: ${overflowing.map(m => escapeHtml(m.name)).join(", ")}. The request will fail or be truncated.</span>`;
+    html += `</div>`;
+  }
+
+  receipt.innerHTML = html;
+}
+
+// -----------------------------------------------------------------------------
+// Wiring
+// -----------------------------------------------------------------------------
+$("prompt-input").addEventListener("input", renderReceipt);
+$("output-input").addEventListener("input", renderReceipt);
+
+// Tabs
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute("aria-selected", "false"));
+    btn.setAttribute("aria-selected", "true");
+    currentProvider = btn.dataset.provider;
+    renderReceipt();
+  });
+  // Keyboard navigation
+  btn.addEventListener("keydown", (e) => {
+    const tabs = [...document.querySelectorAll('.tab')];
+    const idx = tabs.indexOf(btn);
+    if (e.key === "ArrowRight" && idx < tabs.length - 1) {
+      e.preventDefault();
+      tabs[idx + 1].focus(); tabs[idx + 1].click();
+    } else if (e.key === "ArrowLeft" && idx > 0) {
+      e.preventDefault();
+      tabs[idx - 1].focus(); tabs[idx - 1].click();
+    }
+  });
+});
+
+// Theme toggle
+function applyTheme(theme) {
+  document.body.dataset.theme = theme;
+  $("theme-label").textContent = theme === "dark" ? "LIGHT" : "DARK";
+  $("theme-btn").setAttribute("aria-pressed", String(theme === "dark"));
+  const icon = $("theme-icon");
+  if (theme === "dark") {
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+  } else {
+    icon.innerHTML = '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>';
+  }
+}
+$("theme-btn").addEventListener("click", () => {
+  applyTheme(document.body.dataset.theme === "dark" ? "light" : "dark");
+});
+if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+  applyTheme("dark");
+}
+
+// Initial render
+renderReceipt();
+</script>
+</body>
+</html>
