@@ -2,6 +2,8 @@
 
 Estimate token count and API cost for a prompt across Anthropic, OpenAI, and Google models. Browser-only. No API calls. No tracking. Single HTML file.
 
+**Live demo:** https://0xelitesystem.github.io/prompt-cost-calculator/
+
 ## Why
 
 Most LLM users run prompts blind and get surprised by the bill. Most token counters online are provider-specific and skip the cost. This shows both, side-by-side, across providers.
@@ -81,7 +83,7 @@ MIT. See [LICENSE](LICENSE).
 
 ## Related
 
-- [claude-eval-harness](https://github.com/0xelitesystem/claude-eval-harness) — actually run the prompt against multiple models
-- [byok-patterns](https://github.com/0xelitesystem/byok-patterns) — BYOK reference implementations
-- [prompt-templates](https://github.com/0xelitesystem/prompt-templates) — production prompts targeting LLM failure modes
-- [readme-slop-checker](https://github.com/0xelitesystem/readme-slop-checker) — audit a README for AI cliches
+- [claude-eval-harness](https://github.com/0xelitesystem/claude-eval-harness), actually run the prompt against multiple models
+- [byok-patterns](https://github.com/0xelitesystem/byok-patterns), BYOK reference implementations
+- [prompt-templates](https://github.com/0xelitesystem/prompt-templates), production prompts targeting LLM failure modes
+- [readme-slop-checker](https://github.com/0xelitesystem/readme-slop-checker), audit a README for AI cliches
