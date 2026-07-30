@@ -77,6 +77,10 @@ This is a static HTML file. Deploy options:
 - Doesn't analyze prompt content for safety, sensitivity, or quality. That's not the job.
 - Doesn't compare across providers in a single view; pick a tab. Future versions may add a unified compare view.
 
+## More
+
+Part of a catalog of single-file browser tools and plain-language references, all MIT licensed and dependency-free: [0xelitesystem.github.io](https://0xelitesystem.github.io/). Built by [elitesystem.ai](https://elitesystem.ai).
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
