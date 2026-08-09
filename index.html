@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prompt Cost Calculator</title>
+<title>Prompt Cost Calculator - estimate token count and API cost for a prompt across</title>
+<meta name="twitter:card" content="summary">
+<meta property="og:url" content="https://0xelitesystem.github.io/prompt-cost-calculator/">
 <meta name="description" content="Estimate token count and API cost for a prompt across Anthropic, OpenAI, and Google models. Browser-only. No tracking.">
 <meta name="ai.description" content="Single-file HTML tool that estimates token count and API cost for a given prompt, displayed across multiple LLM providers (Anthropic, OpenAI, Google). Token counting is character-based approximation with per-provider tuning factors; the tool documents this clearly. Includes input prompt and optional expected output for round-trip cost. Light and dark themes. No frameworks, no dependencies, no tracking.">
 <meta property="og:title" content="Prompt Cost Calculator">
@@ -356,7 +358,7 @@ footer a:hover, footer a:focus { color: var(--ink); }
     <p><strong>How tokens are counted.</strong> This tool uses character-based approximation, not the actual tokenizers. Each provider's tokenizer is slightly different (Anthropic uses a BPE variant; OpenAI uses tiktoken; Google uses SentencePiece). The approximation factors used here (chars per token) are calibrated against typical English text and will be within roughly 5 to 15 percent of the real count. For exact counts, use each provider's official tokenizer in their SDK.</p>
     <p><strong>Pricing accuracy.</strong> Pricing values are baked into this file as USD per 1M tokens. Verify current pricing in the provider's console before relying on the cost estimates for billing decisions. To update, edit the <code>PROVIDERS</code> object at the top of the script.</p>
     <div class="footer-rule">~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</div>
-    <p>Source: <a href="https://github.com/0xelitesystem/prompt-cost-calculator" target="_blank" rel="noopener">github.com/0xelitesystem/prompt-cost-calculator</a></p>
+    <p>Source: <a href="https://github.com/0xelitesystem/prompt-cost-calculator" target="_blank" rel="noopener">github.com/0xelitesystem/prompt-cost-calculator</a> &middot; <a href="https://elitesystem.ai" target="_blank" rel="noopener">An elitesystem.ai tool</a> &middot; <a href="https://0xelitesystem.github.io/" target="_blank" rel="noopener">More tools</a></p>
     <p>Related: <a href="https://github.com/0xelitesystem/claude-eval-harness" target="_blank" rel="noopener">claude-eval-harness</a> · <a href="https://github.com/0xelitesystem/byok-patterns" target="_blank" rel="noopener">byok-patterns</a> · <a href="https://github.com/0xelitesystem/prompt-templates" target="_blank" rel="noopener">prompt-templates</a></p>
     <p>MIT licensed. No data leaves your browser.</p>
   </footer>
