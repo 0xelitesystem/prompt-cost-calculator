@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -305,6 +305,29 @@ footer a:hover, footer a:focus { color: var(--ink); }
 </style>
 <link rel="canonical" href="https://0xelitesystem.github.io/prompt-cost-calculator/">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Prompt Cost Calculator","applicationCategory":"DeveloperApplication","operatingSystem":"Any (browser)","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"url":"https://0xelitesystem.github.io/prompt-cost-calculator/","author":{"@type":"Person","name":"0xelitesystem","url":"https://elitesystem.ai"}}</script>
+<style>
+/* elitesystem brand tokens: chrome only, meaning preserved */
+:root, :root[data-theme="dark"] {
+  --ink: #e8e8e3;
+  --ink-soft: #a8a8a3;
+  --ok: #7ddc7d;
+  --paper: #0a0a0a;
+  --rule: #1f1f1d;
+  --rule-soft: #1f1f1d;
+  --warn: #ffb454;
+}
+:root[data-theme="light"] {
+  --ink: #0a0a0a;
+  --ink-soft: #2a2a27;
+  --ok: #1a5c2e;
+  --paper: #e8ebef;
+  --rule: #c8cdd5;
+  --rule-soft: #c8cdd5;
+  --warn: #a05a00;
+}
+:root { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+</style>
 </head>
 <body data-theme="light">
 <a href="#main" class="skip-link">Skip to main content</a>
