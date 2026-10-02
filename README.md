@@ -4,7 +4,7 @@ Estimate token count and API cost for a prompt across Anthropic, OpenAI, and Goo
 
 **Live demo:** https://0xelitesystem.github.io/prompt-cost-calculator/
 
-## Why
+## Why this exists
 
 Most LLM users run prompts blind and get surprised by the bill. Most token counters online are provider-specific and skip the cost. This shows both, side-by-side, across providers.
 
@@ -15,7 +15,9 @@ Useful for:
 - **Budget estimation**: "If I run this 1,000 times, what does it cost?"
 - **Context-window checks**: a quick warning when you're about to overflow
 
-## Use it
+It is one HTML file with no tracking and no dependencies, MIT licensed.
+
+## Use
 
 Open `index.html` in any browser. Or visit the hosted version at `https://0xelitesystem.github.io/prompt-cost-calculator/` once GitHub Pages is enabled.
 
@@ -76,6 +78,23 @@ This is a static HTML file. Deploy options:
 - Doesn't store your prompt anywhere. Refreshing the page wipes it.
 - Doesn't analyze prompt content for safety, sensitivity, or quality. That's not the job.
 - Doesn't compare across providers in a single view; pick a tab. Future versions may add a unified compare view.
+
+## Privacy
+
+Everything runs in your browser. The page makes no network requests: your prompt and expected output are never sent anywhere and are not stored. The only thing saved is your light or dark theme choice, kept in localStorage under the key `theme`.
+
+## Run locally
+
+```
+git clone https://github.com/0xelitesystem/prompt-cost-calculator
+cd prompt-cost-calculator
+```
+
+Open `index.html` in a browser, or serve the folder with `python -m http.server` and visit http://localhost:8000.
+
+## Build
+
+No build step. It is a single `index.html` file.
 
 ## More
 
